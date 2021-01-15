@@ -38,6 +38,9 @@
 #ifdef __MORPHOS__
 #define USE_INLINE_STDARG
 #endif
+#ifdef __amigaos4__
+#define __USE_INLINE__
+#endif
 #include <proto/camd.h>
 #include <proto/exec.h>
 #include <proto/dos.h>
@@ -82,28 +85,28 @@ int MidiDriver_CAMD::open() {
 	if (_isOpen)
 		return MERR_ALREADY_OPEN;
 
-#if defined(__amigaos4__)
+//#if defined(__amigaos4__)
 	_CamdBase = IExec->OpenLibrary("camd.library", 36L);
-#else
-	_CamdBase = OpenLibrary("camd.library", 36L);
-#endif
+//#else
+//	_CamdBase = OpenLibrary("camd.library", 36L);
+//#endif
 	if (!_CamdBase) {
 		error("Could not open 'camd.library'");
 		return -1;
 	}
 
 #if defined(__amigaos4__)
-	_ICamd = (struct CamdIFace *) IExec->GetInterface(_CamdBase, "main", 1, NULL);
+	_ICamd = (struct CamdIFace *) GetInterface(_CamdBase, "main", 1, NULL);
 	if (!_ICamd) {
 		closeAll();
 		error("Error while retrieving CAMD interface");
 		return -1;
 	}
-
-	_midi_node = _ICamd->CreateMidi(MIDI_MsgQueue, 0L, MIDI_SysExSize, 4096L, MIDI_Name, "scummvm", TAG_END);
-#else
-	_midi_node = CreateMidi(MIDI_MsgQueue, 0L, MIDI_SysExSize, 4096L, MIDI_Name, (Tag)"scummvm", TAG_END);
 #endif
+//	_midi_node = _ICamd->CreateMidi(MIDI_MsgQueue, 0L, MIDI_SysExSize, 4096L, MIDI_Name, "scummvm", TAG_END);
+//#else
+	_midi_node = CreateMidi(MIDI_MsgQueue, 0L, MIDI_SysExSize, 4096L, MIDI_Name, (ULONG)"scummvm", TAG_END);
+//#endif
 	if (!_midi_node) {
 		closeAll();
 		error("Could not create CAMD MIDI node");
@@ -117,11 +120,11 @@ int MidiDriver_CAMD::open() {
 		return MERR_DEVICE_NOT_AVAILABLE;
 	}
 
-#if defined(__amigaos4__)
-	_midi_link = _ICamd->AddMidiLink(_midi_node, MLTYPE_Sender, MLINK_Location, devicename, TAG_END);
-#else
-	_midi_link = AddMidiLink(_midi_node, MLTYPE_Sender, MLINK_Location, (Tag)devicename, TAG_END);
-#endif
+//#if defined(__amigaos4__)
+//	_midi_link = _ICamd->AddMidiLink(_midi_node, MLTYPE_Sender, MLINK_Location, devicename, TAG_END);
+//#else
+	_midi_link = AddMidiLink(_midi_node, MLTYPE_Sender, MLINK_Location, (ULONG)devicename, TAG_END);
+//#endif
 	if (!_midi_link) {
 		closeAll();
 		error("Could not create CAMD MIDI link to '%s'", devicename);
@@ -146,11 +149,11 @@ void MidiDriver_CAMD::send(uint32 b) {
 	midiDriverCommonSend(b);
 
 	ULONG data = READ_LE_UINT32(&b);
-#if defined(__amigaos4__)
-	_ICamd->PutMidi(_midi_link, data);
-#else
+//#if defined(__amigaos4__)
+//	_ICamd->PutMidi(_midi_link, data);
+//#else
 	PutMidi(_midi_link, data);
-#endif
+//#endif
 }
 
 void MidiDriver_CAMD::sysEx(const byte *msg, uint16 length) {
@@ -169,27 +172,27 @@ void MidiDriver_CAMD::sysEx(const byte *msg, uint16 length) {
 	buf[length + 1] = 0xF7;
 
 	// Send it
-#if defined(__amigaos4__)
-	_ICamd->PutSysEx(_midi_link, buf);
-#else
+//#if defined(__amigaos4__)
+//	_ICamd->PutSysEx(_midi_link, buf);
+//#else
 	PutSysEx(_midi_link, buf);
-#endif
+//#endif
 }
 
 char *MidiDriver_CAMD::getDevice() {
 	char *retname = NULL;
 
-#if defined(__amigaos4__)
-	APTR key = _ICamd->LockCAMD(CD_Linkages);
-#else
+//#if defined(__amigaos4__)
+//	APTR key = _ICamd->LockCAMD(CD_Linkages);
+//#else
 	APTR key = LockCAMD(CD_Linkages);
-#endif
+//#endif
 	if (key != NULL) {
-#if defined(__amigaos4__)
-		struct MidiCluster *cluster = _ICamd->NextCluster(NULL);
-#else
+//#if defined(__amigaos4__)
+//		struct MidiCluster *cluster = _ICamd->NextCluster(NULL);
+//#else
 		struct MidiCluster *cluster = NextCluster(NULL);
-#endif
+//#endif
 		while (cluster && !retname) {
 			// Get the current cluster name
 			char *dev = cluster->mcl_Node.ln_Name;
@@ -200,27 +203,27 @@ char *MidiDriver_CAMD::getDevice() {
 				retname = _outport;
 			} else {
 				// Search the next one
-#if defined(__amigaos4__)
-				cluster = _ICamd->NextCluster(cluster);
-#else
+//#if defined(__amigaos4__)
+//				cluster = _ICamd->NextCluster(cluster);
+//#else
 				cluster = NextCluster(cluster);
-#endif
+//#endif
 			}
 		}
 
 		// If the user has a preference outport set, use this instead
-#if defined(__amigaos4__)
-		if(IDOS->GetVar("DefMidiOut", _outport, 128, 0))
-#else
+//#if defined(__amigaos4__)
+//		if(IDOS->GetVar("DefMidiOut", _outport, 128, 0))
+//#else
 		if (GetVar("DefMidiOut", _outport, 128, 0))
-#endif
+//#endif
 			retname = _outport;
 
-#if defined(__amigaos4__)
-		_ICamd->UnlockCAMD(key);
-#else
+//#if defined(__amigaos4__)
+//		_ICamd->UnlockCAMD(key);
+//#else
 		UnlockCAMD(key);
-#endif
+//#endif
 	}
 
 	return retname;
@@ -231,10 +234,10 @@ void MidiDriver_CAMD::closeAll() {
 
 #if defined(__amigaos4__)	
 	if (_ICamd)
-		IExec->DropInterface((struct Interface *)_ICamd);
+		DropInterface((struct Interface *)_ICamd);
 #endif
 
-#if defined(__amigaos4__)
+/*#if defined(__amigaos4__)
 		// Need Test for it on AmigaOS4 
 		IExec->FlushMidi(_midi_node);
 		if (_midi_link) {
@@ -245,7 +248,7 @@ void MidiDriver_CAMD::closeAll() {
 			IExec->DeleteMidi(_midi_node);
 			_midi_node = NULL;
 		}
-#else
+#else*/
 		FlushMidi(_midi_node);
 		if (_midi_link) {
 			RemoveMidiLink(_midi_link);
@@ -255,13 +258,13 @@ void MidiDriver_CAMD::closeAll() {
 			DeleteMidi(_midi_node);
 			_midi_node = NULL;
 		}
-#endif
+//#endif
 
-#if defined(__amigaos4__)		
-		IExec->CloseLibrary(_CamdBase);
-#else
+//#if defined(__amigaos4__)		
+//		IExec->CloseLibrary(_CamdBase);
+//#else
 		CloseLibrary(_CamdBase);
-#endif
+//#endif
 		_CamdBase = NULL;
 	}
 	_isOpen = false;
