@@ -86,9 +86,9 @@ int MidiDriver_CAMD::open() {
 		return MERR_ALREADY_OPEN;
 
 //#if defined(__amigaos4__)
-	_CamdBase = IExec->OpenLibrary("camd.library", 36L);
+//	_CamdBase = IExec->OpenLibrary("camd.library", 36L);
 //#else
-//	_CamdBase = OpenLibrary("camd.library", 36L);
+	_CamdBase = OpenLibrary("camd.library", 36L);
 //#endif
 	if (!_CamdBase) {
 		error("Could not open 'camd.library'");
