@@ -35,12 +35,6 @@
 #include "audio/musicplugin.h"
 #include "audio/mpu401.h"
 
-#ifdef __MORPHOS__
-#define USE_INLINE_STDARG
-#endif
-#ifdef __amigaos4__
-#define __USE_INLINE__
-#endif
 #include <proto/camd.h>
 #include <proto/exec.h>
 #include <proto/dos.h>
@@ -105,7 +99,8 @@ int MidiDriver_CAMD::open() {
 #endif
 //	_midi_node = _ICamd->CreateMidi(MIDI_MsgQueue, 0L, MIDI_SysExSize, 4096L, MIDI_Name, "scummvm", TAG_END);
 //#else
-	_midi_node = CreateMidi(MIDI_MsgQueue, 0L, MIDI_SysExSize, 4096L, MIDI_Name, (ULONG)"scummvm", TAG_END);
+	TagItem tags[] = { MIDI_MsgQueue, 0L, MIDI_SysExSize, 4096L, MIDI_Name, (ULONG)"scummvm", TAG_END, 0};
+	_midi_node = CreateMidiA(tags);
 //#endif
 	if (!_midi_node) {
 		closeAll();
@@ -123,7 +118,8 @@ int MidiDriver_CAMD::open() {
 //#if defined(__amigaos4__)
 //	_midi_link = _ICamd->AddMidiLink(_midi_node, MLTYPE_Sender, MLINK_Location, devicename, TAG_END);
 //#else
-	_midi_link = AddMidiLink(_midi_node, MLTYPE_Sender, MLINK_Location, (ULONG)devicename, TAG_END);
+	TagItem tagsLink[] = { MLINK_Location, (ULONG)devicename, TAG_END, 0};
+	_midi_link = AddMidiLinkA(_midi_node, MLTYPE_Sender, tagsLink);
 //#endif
 	if (!_midi_link) {
 		closeAll();
