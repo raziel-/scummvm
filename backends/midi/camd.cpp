@@ -35,6 +35,9 @@
 #include "audio/musicplugin.h"
 #include "audio/mpu401.h"
 
+#ifdef __amigaos4__
+#define __USE_INLINE__
+#endif
 #include <proto/camd.h>
 #include <proto/exec.h>
 #include <proto/dos.h>
